@@ -4,6 +4,21 @@ const app = express()
 const userRoute = require('./routes/user')
 const eventRoute = require('./routes/event')
 
+const mongoose = require('mongoose')
+const uri = 'mongodb://127.0.0.1:27017/sankana'
+
+mongoose.connect(uri, { useUnifiedTopology: true, useNewUrlParser: true })
+
+const connection = mongoose.connection
+
+connection.once("open", (err, db) => {
+  if (err) {
+    console.log(err)
+  } else {
+    console.log("MongoDB database connection established successfully")
+  }
+})
+
 app.use(express.urlencoded({ extended : false }))
 app.use(express.json())
 

@@ -1,5 +1,6 @@
+const users = require('../models/Users')
+
 const registerUser = (req, res) => {
-    res.send('Register User')
 }
 
 module.exports = { registerUser }
