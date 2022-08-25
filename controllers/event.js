@@ -1,22 +1,22 @@
 const createEvent = (req, res) => {
-    res.send('Create Event')
-}
+  res.send("Create Event");
+};
 
 const joinEvent = (req, res) => {
-    res.send('Join Event')
-}
+  res.send("Join Event");
+};
 
 const completeEvent = (req, res) => {
-    res.send('Complete Event')
-}
+  res.send("Complete Event");
+};
 
 const getEvent = (req, res) => {
-    res.send('Get Event')
-}
+  res.send("Get Event");
+};
 
 module.exports = {
-    createEvent,
-    joinEvent,
-    completeEvent,
-    getEvent
-}
+  createEvent,
+  joinEvent,
+  completeEvent,
+  getEvent,
+};
