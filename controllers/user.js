@@ -1,8 +1,8 @@
-const User = require("../models/User");
+const { UserModel } = require("../models/User");
 
 const registerUser = async (req, res) => {
-  const { device_id, name, photo_url } = req.body;
-  if (!device_id) {
+  const { deviceId, name, photoUrl } = req.body;
+  if (!deviceId) {
     return res.status(400).json({
       message: "Device Id is required",
     });
@@ -15,21 +15,21 @@ const registerUser = async (req, res) => {
   }
 
   try {
-    const query = User.where({ deviceId: device_id });
+    const query = UserModel.where({ deviceId: deviceId });
     const userAlreadyExists = await query.findOne();
 
     if (userAlreadyExists)
       return res.status(400).json({ message: "User already exists." });
 
-    const newUser = new User({
+    const newUser = new UserModel({
       name: name,
-      deviceId: device_id,
-      photoUrl: photo_url,
+      deviceId: deviceId,
+      photoUrl: photoUrl,
     });
 
     await newUser.save();
 
-    res.status(200).json({
+    res.status(201).json({
       message: "User successfully added.",
       data: { user: newUser },
     });
