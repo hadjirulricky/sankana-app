@@ -2,9 +2,9 @@ const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
-const UserSchema = require("./Users");
+const { UserSchema } = require("./User");
 
-const LocationSchema = require("./Locations");
+const { LocationSchema } = require("./Location");
 
 const eventSchema = new Schema({
   code: {
@@ -21,4 +21,7 @@ const eventSchema = new Schema({
   ],
 });
 
-module.exports = mongoose.model("Event", eventSchema);
+module.exports = {
+  EventModel: mongoose.model("Event", eventSchema),
+  EventSchema: eventSchema,
+};
