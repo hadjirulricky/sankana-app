@@ -50,14 +50,66 @@ const createEvent = async (req, res) => {
       ],
     });
 
-    res.status(201).json(event);
+    res
+      .status(201)
+      .json({ message: "Event created successfully.", data: { event: event } });
   } catch (err) {
     res.status(500).send(err);
   }
 };
 
-const joinEvent = (req, res) => {
-  res.send("Join Event");
+const joinEvent = async (req, res) => {
+  const { code } = req.params;
+  const { creator } = req.body;
+
+  if (!code) {
+    return res.status(400).json({
+      message: "Event code is required",
+    });
+  }
+
+  if (!creator) {
+    return res.status(400).json({
+      message: "User is required",
+    });
+  }
+
+  if (!creator.location) {
+    return res.status(400).json({
+      message: "User location is required",
+    });
+  }
+
+  try {
+    const eventAlreadyExists = await EventModel.where({
+      code: code,
+    }).findOne();
+
+    if (!eventAlreadyExists) {
+      return res.status(405).json({
+        message: "Event does not exists",
+      });
+    }
+
+    const event = await EventModel.findOneAndUpdate(
+      { code: code },
+      {
+        $push: {
+          participants: {
+            user: creator,
+            locations: [creator.location],
+          },
+        },
+      },
+      { new: true, runValidators: true }
+    );
+
+    res
+      .status(201)
+      .json({ message: "Event joined successfully.", data: { event: event } });
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };
 
 const completeEvent = (req, res) => {
