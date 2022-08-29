@@ -112,12 +112,32 @@ const joinEvent = async (req, res) => {
   }
 };
 
-const completeEvent = (req, res) => {
-  res.send("Complete Event");
+const getEvent = async (req, res) => {
+  const { code } = req.params;
+
+  if (!code) {
+    return res.status(400).json({
+      message: "Event code is required",
+    });
+  }
+
+  try {
+    const event = await EventModel.where({
+      code: code,
+    }).findOne();
+
+    if (!event) {
+      return res.status(400).json({ message: "Invalid Event code" });
+    }
+
+    res.status(200).json({ data: { event: event } });
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };
 
-const getEvent = (req, res) => {
-  res.send("Get Event");
+const completeEvent = (req, res) => {
+  res.send("Complete Event");
 };
 
 module.exports = {
