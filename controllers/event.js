@@ -1,4 +1,5 @@
 const { EventModel } = require("../models/Event");
+const { UserModel } = require("../models/User");
 const crypto = require("crypto");
 
 const createEvent = async (req, res) => {
@@ -136,6 +137,66 @@ const getEvent = async (req, res) => {
   }
 };
 
+const addUserLocation = async (req, res) => {
+  const { code, deviceId } = req.params;
+  const { location } = req.body;
+
+  if (!code) {
+    return res.status(400).json({
+      message: "Event code is required",
+    });
+  }
+
+  if (!deviceId) {
+    return res.status(400).json({
+      message: "Device Id is required",
+    });
+  }
+
+  if (!location) {
+    return res.status(400).json({
+      message: "Location is required",
+    });
+  }
+
+  try {
+    const eventExists = await EventModel.where({
+      code: code,
+    }).findOne();
+
+    if (!eventExists) {
+      return res.status(400).json({ message: "Invalid Event code" });
+    }
+
+    const userExists = await UserModel.where({ deviceId: deviceId }).findOne();
+
+    if (!userExists) {
+      return res.status(400).json({ message: "User does not exists" });
+    }
+
+    const event = await EventModel.findOneAndUpdate(
+      { code: code, "participants.user.deviceId": deviceId },
+      {
+        $push: {
+          "participants.$.locations": location,
+        },
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!event) {
+      return res.status(400).json({ message: "Unable to add location" });
+    }
+
+    res.status(200).json({
+      message: "Added location successfully.",
+      data: { event: event },
+    });
+  } catch (err) {
+    res.status(500).send(err);
+  }
+};
+
 const completeEvent = (req, res) => {
   res.send("Complete Event");
 };
@@ -145,4 +206,5 @@ module.exports = {
   joinEvent,
   completeEvent,
   getEvent,
+  addUserLocation,
 };
