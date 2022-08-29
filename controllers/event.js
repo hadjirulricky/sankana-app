@@ -1,5 +1,7 @@
 const { EventModel } = require("../models/Event");
 const { UserModel } = require("../models/User");
+const { Event } = require("../constants/events");
+const pusher = require("../lib/pusher");
 const crypto = require("crypto");
 
 const createEvent = async (req, res) => {
@@ -51,6 +53,10 @@ const createEvent = async (req, res) => {
       ],
     });
 
+    await pusher.trigger(eventCode, Event.EventStarted, {
+      data: { event: event },
+    });
+
     res
       .status(201)
       .json({ message: "Event created successfully.", data: { event: event } });
@@ -61,7 +67,7 @@ const createEvent = async (req, res) => {
 
 const joinEvent = async (req, res) => {
   const { code } = req.params;
-  const { creator } = req.body;
+  const user = req.body;
 
   if (!code) {
     return res.status(400).json({
@@ -69,13 +75,13 @@ const joinEvent = async (req, res) => {
     });
   }
 
-  if (!creator) {
+  if (!user) {
     return res.status(400).json({
       message: "User is required",
     });
   }
 
-  if (!creator.location) {
+  if (!user.location) {
     return res.status(400).json({
       message: "User location is required",
     });
@@ -97,13 +103,21 @@ const joinEvent = async (req, res) => {
       {
         $push: {
           participants: {
-            user: creator,
-            locations: [creator.location],
+            user: user,
+            locations: [user.location],
           },
         },
       },
       { new: true, runValidators: true }
     );
+
+    await pusher.trigger(code, Event.EventParticipantJoin, {
+      data: { user: user },
+    });
+
+    await pusher.trigger(code, Event.EventParticipantUpdated, {
+      data: { event: event },
+    });
 
     res
       .status(201)
@@ -139,7 +153,7 @@ const getEvent = async (req, res) => {
 
 const addUserLocation = async (req, res) => {
   const { code, deviceId } = req.params;
-  const { location } = req.body;
+  const location = req.body;
 
   if (!code) {
     return res.status(400).json({
@@ -187,6 +201,10 @@ const addUserLocation = async (req, res) => {
     if (!event) {
       return res.status(400).json({ message: "Unable to add location" });
     }
+
+    await pusher.trigger(code, Event.EventParticipantUpdated, {
+      data: { event: event },
+    });
 
     res.status(200).json({
       message: "Added location successfully.",
