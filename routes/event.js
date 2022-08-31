@@ -13,7 +13,7 @@ router.post("/", createEvent);
 
 router.post("/:code/join", joinEvent);
 
-router.post("/:code/complete", completeEvent);
+router.put("/:code/complete", completeEvent);
 
 router.get("/:code", getEvent);
 

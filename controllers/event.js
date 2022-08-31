@@ -1,6 +1,7 @@
 const { EventModel } = require("../models/Event");
 const { UserModel } = require("../models/User");
 const { Event } = require("../constants/events");
+const { Status } = require("../constants/status");
 const pusher = require("../lib/pusher");
 const crypto = require("crypto");
 
@@ -215,8 +216,59 @@ const addUserLocation = async (req, res) => {
   }
 };
 
-const completeEvent = (req, res) => {
-  res.send("Complete Event");
+const completeEvent = async (req, res) => {
+  const { code } = req.params;
+  const { deviceId } = req.body;
+
+  if (!code) {
+    return res.status(400).json({
+      message: "Event code is required",
+    });
+  }
+
+  if (!deviceId) {
+    return res.status(400).json({
+      message: "Device Id is required",
+    });
+  }
+
+  try {
+    const eventExists = await EventModel.where({
+      code: code,
+    }).findOne();
+
+    if (!eventExists) {
+      return res.status(400).json({ message: "Invalid Event code" });
+    }
+
+    const userExists = await UserModel.where({ deviceId: deviceId }).findOne();
+
+    if (!userExists) {
+      return res.status(400).json({ message: "User does not exists" });
+    }
+
+    const event = await EventModel.findOneAndUpdate(
+      { code: code, "createdBy.deviceId": deviceId },
+      {
+        status: Status.COMPLETED,
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!event) {
+      return res.status(400).json({ message: "Unable to complete event" });
+    }
+
+    await pusher.trigger(code, Event.EventCompleted, {
+      message: "Meetup event completed.",
+    });
+
+    res.status(200).json({
+      message: "Meetup event completed.",
+    });
+  } catch (err) {
+    res.status(500).send(err);
+  }
 };
 
 module.exports = {
