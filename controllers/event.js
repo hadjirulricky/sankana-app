@@ -387,6 +387,66 @@ const userCancelled = async (req, res) => {
   }
 };
 
+const userArrived = async (req, res) => {
+  const { code, deviceId } = req.params;
+
+  if (!code) {
+    return res.status(400).json({
+      message: "Event code is required",
+    });
+  }
+
+  if (!deviceId) {
+    return res.status(400).json({
+      message: "Device Id is required",
+    });
+  }
+
+  try {
+    const eventExists = await EventModel.where({
+      code: code,
+    }).findOne();
+
+    if (!eventExists) {
+      return res.status(400).json({ message: "Invalid Event code" });
+    }
+
+    const user = await UserModel.where({ deviceId: deviceId }).findOne();
+
+    if (!user) {
+      return res.status(400).json({ message: "User does not exists" });
+    }
+
+    const event = await EventModel.findOneAndUpdate(
+      { code: code, "participants.user.deviceId": deviceId },
+      {
+        $set: { "participants.$.status": UserStatus.ARRIVED },
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!event) {
+      return res.status(400).json({ message: "Unable to update status" });
+    }
+
+    await pusher.trigger(code, Event.EventParticipantArrived, {
+      message: "User arrived successfully.",
+      data: { user: user },
+    });
+
+    await pusher.trigger(code, Event.EventParticipantUpdated, {
+      data: { event: event },
+    });
+
+    res.status(200).json({
+      message: "User arrived successfully.",
+      data: { event: event },
+    });
+  } catch (err) {
+    res.status(500).send(err);
+  }
+};
+
 module.exports = {
   createEvent,
   joinEvent,
@@ -395,4 +455,5 @@ module.exports = {
   addUserLocation,
   cancelEvent,
   userCancelled,
+  userArrived,
 };
