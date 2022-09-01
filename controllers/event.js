@@ -1,7 +1,8 @@
 const { EventModel } = require("../models/Event");
 const { UserModel } = require("../models/User");
 const { Event } = require("../constants/events");
-const { Status } = require("../constants/status");
+const { EventStatus } = require("../constants/event-status");
+const { UserStatus } = require("../constants/user-status");
 const pusher = require("../lib/pusher");
 const crypto = require("crypto");
 
@@ -250,7 +251,7 @@ const completeEvent = async (req, res) => {
     const event = await EventModel.findOneAndUpdate(
       { code: code, "createdBy.deviceId": deviceId },
       {
-        status: Status.COMPLETED,
+        status: EventStatus.COMPLETED,
       },
       { new: true, runValidators: true }
     );
@@ -305,7 +306,7 @@ const cancelEvent = async (req, res) => {
     const event = await EventModel.findOneAndUpdate(
       { code: code, "createdBy.deviceId": deviceId },
       {
-        status: Status.CANCELLED,
+        status: EventStatus.CANCELLED,
       },
       { new: true, runValidators: true }
     );
@@ -326,6 +327,66 @@ const cancelEvent = async (req, res) => {
   }
 };
 
+const userCancelled = async (req, res) => {
+  const { code, deviceId } = req.params;
+
+  if (!code) {
+    return res.status(400).json({
+      message: "Event code is required",
+    });
+  }
+
+  if (!deviceId) {
+    return res.status(400).json({
+      message: "Device Id is required",
+    });
+  }
+
+  try {
+    const eventExists = await EventModel.where({
+      code: code,
+    }).findOne();
+
+    if (!eventExists) {
+      return res.status(400).json({ message: "Invalid Event code" });
+    }
+
+    const user = await UserModel.where({ deviceId: deviceId }).findOne();
+
+    if (!user) {
+      return res.status(400).json({ message: "User does not exists" });
+    }
+
+    const event = await EventModel.findOneAndUpdate(
+      { code: code, "participants.user.deviceId": deviceId },
+      {
+        $set: { "participants.$.status": UserStatus.CANCELLED },
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!event) {
+      return res.status(400).json({ message: "Unable to cancel" });
+    }
+
+    await pusher.trigger(code, Event.EventParticipantCancelled, {
+      message: "User cancelled successfully.",
+      data: { user: user },
+    });
+
+    await pusher.trigger(code, Event.EventParticipantUpdated, {
+      data: { event: event },
+    });
+
+    res.status(200).json({
+      message: "User cancelled successfully.",
+      data: { event: event },
+    });
+  } catch (err) {
+    res.status(500).send(err);
+  }
+};
+
 module.exports = {
   createEvent,
   joinEvent,
@@ -333,4 +394,5 @@ module.exports = {
   getEvent,
   addUserLocation,
   cancelEvent,
+  userCancelled,
 };

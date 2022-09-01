@@ -8,6 +8,7 @@ const {
   getEvent,
   addUserLocation,
   cancelEvent,
+  userCancelled,
 } = require("../controllers/event");
 
 router.post("/", createEvent);
@@ -21,5 +22,7 @@ router.get("/:code", getEvent);
 router.post("/:code/participants/:deviceId/locations", addUserLocation);
 
 router.put("/:code/cancel", cancelEvent);
+
+router.put("/:code/participants/:deviceId/cancel", userCancelled);
 
 module.exports = router;
