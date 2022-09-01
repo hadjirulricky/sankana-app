@@ -2,7 +2,9 @@ const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
-const { Status } = require("../constants/status");
+const { EventStatus } = require("../constants/event-status");
+
+const { UserStatus } = require("../constants/user-status");
 
 const { UserSchema } = require("./User");
 
@@ -15,8 +17,8 @@ const eventSchema = new Schema({
   },
   status: {
     type: String,
-    enum: Object.values(Status),
-    default: Status.ON_GOING,
+    enum: Object.values(EventStatus),
+    default: EventStatus.ON_GOING,
     required: true,
   },
   createdBy: UserSchema,
@@ -25,6 +27,12 @@ const eventSchema = new Schema({
     {
       user: UserSchema,
       locations: [LocationSchema],
+      status: {
+        type: String,
+        enum: Object.values(UserStatus),
+        default: UserStatus.ON_THE_WAY,
+        required: true,
+      },
     },
   ],
 });
