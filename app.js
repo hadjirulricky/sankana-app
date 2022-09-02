@@ -5,9 +5,9 @@ const userRoute = require("./routes/user");
 const eventRoute = require("./routes/event");
 
 const mongoose = require("mongoose");
-const uri = "mongodb://127.0.0.1:27017/sankana";
+const url = `mongodb+srv://root:WOsk76rQtgzYfUa0@cluster0.bzpen.mongodb.net/sankana`;
 
-mongoose.connect(uri, { useUnifiedTopology: true, useNewUrlParser: true });
+mongoose.connect(url, { useUnifiedTopology: true, useNewUrlParser: true });
 
 const connection = mongoose.connection;
 
